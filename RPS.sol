@@ -21,9 +21,16 @@ contract RPS {
         numPlayer++;
     }
 
-    function input(uint choice, uint idx) public  {
+    function input(uint choice) public  {
         require(numPlayer == 2);
-        require(msg.sender == player[idx].addr);
+        uint idx;
+        if (msg.sender == player[0].addr) {
+            idx = 0;
+        } else if (msg.sender == player[1].addr) {
+            idx = 1;
+        } else {
+            revert("Sender is not a registered player");
+        }
         require(choice == 0 || choice == 1 || choice == 2);
         player[idx].choice = choice;
         numInput++;
