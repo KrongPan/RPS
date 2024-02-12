@@ -14,7 +14,13 @@ contract RPS {
     uint public numInput = 0;
     uint public withdrawTime = 15 seconds;
 
-    function checkIfRegis() private view returns (uint) {
+    function _restartGame() private {
+        reward = 0;
+        numPlayer = 0;
+        numInput = 0;
+    }
+
+    function _checkIfRegis() private view returns (uint) {
         if (msg.sender == player[0].addr) {
             return 0;
         } else if (msg.sender == player[1].addr) {
@@ -36,12 +42,13 @@ contract RPS {
 
     function withdraw() public payable {
         uint idx;
-        idx = checkIfRegis();
+        idx = _checkIfRegis();
         if(numPlayer == 1) {
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
             reward = 0;
             numPlayer--;
+            _restartGame();
         } else if (numPlayer == 2) {
             require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
             require(player[(idx+1)%2].choice == 7 && player[idx].choice != 7);
@@ -49,13 +56,14 @@ contract RPS {
             account.transfer(reward);
             reward = 0;
             numPlayer = 0;
+            _restartGame();
         }
     }
 
     function input(uint choice) public  {
         require(numPlayer == 2);
         uint idx;
-        idx = checkIfRegis();
+        idx = _checkIfRegis();
         require(choice >= 0 && choice < 7);
         player[idx].choice = choice;
         numInput++;
@@ -82,5 +90,6 @@ contract RPS {
             account0.transfer(reward / 2);
             account1.transfer(reward / 2);
         }
+        _restartGame();
     }
 }
