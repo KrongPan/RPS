@@ -4,7 +4,7 @@ pragma solidity >=0.7.0 <0.9.0;
 
 contract RPS {
     struct Player {
-        uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
+        uint choice;
         address addr;
         uint depositTime;
     }
@@ -12,7 +12,7 @@ contract RPS {
     uint public reward = 0;
     mapping (uint => Player) public player;
     uint public numInput = 0;
-    uint public withdrawTime = 10 seconds;
+    uint public withdrawTime = 15 seconds;
 
     function checkIfRegis() private view returns (uint) {
         if (msg.sender == player[0].addr) {
@@ -29,27 +29,34 @@ contract RPS {
         require(msg.value == 1 ether);
         reward += msg.value;
         player[numPlayer].addr = msg.sender;
-        player[numPlayer].choice = 3;
+        player[numPlayer].choice = 7;
         player[numPlayer].depositTime = block.timestamp;
         numPlayer++;
     }
 
     function withdraw() public payable {
-        require(numPlayer == 1);
         uint idx;
         idx = checkIfRegis();
-        require(block.timestamp >= player[idx].depositTime + withdrawTime);
-        address payable account0 = payable(player[0].addr);
-        account0.transfer(reward);
-        reward -= 1 ether;
-        numPlayer--;
+        if(numPlayer == 1) {
+            address payable account = payable(player[idx].addr);
+            account.transfer(reward);
+            reward = 0;
+            numPlayer--;
+        } else if (numPlayer == 2) {
+            require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
+            require(player[(idx+1)%2].choice == 7 && player[idx].choice != 7);
+            address payable account = payable(player[idx].addr);
+            account.transfer(reward);
+            reward = 0;
+            numPlayer = 0;
+        }
     }
 
     function input(uint choice) public  {
         require(numPlayer == 2);
         uint idx;
         idx = checkIfRegis();
-        require(choice == 0 || choice == 1 || choice == 2);
+        require(choice >= 0 && choice < 7);
         player[idx].choice = choice;
         numInput++;
         if (numInput == 2) {
@@ -62,11 +69,11 @@ contract RPS {
         uint p1Choice = player[1].choice;
         address payable account0 = payable(player[0].addr);
         address payable account1 = payable(player[1].addr);
-        if ((p0Choice + 1) % 3 == p1Choice) {
+        if ((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice || (p0Choice + 3) % 7 == p1Choice) {
             // to pay player[1]
             account1.transfer(reward);
         }
-        else if ((p1Choice + 1) % 3 == p0Choice) {
+        else if ((p1Choice + 1) % 7 == p0Choice || (p1Choice + 2) % 7 == p0Choice || (p1Choice + 3) % 7 == p0Choice) {
             // to pay player[0]
             account0.transfer(reward);    
         }
