@@ -19,13 +19,13 @@ contract RWAPSSF is CommitReveal {
     mapping (uint => Ans) public ans;
     uint public numInput = 0;
     uint public withdrawTime = 15 seconds;
-    uint public numReval = 0;
+    uint public numReveal = 0;
 
     function _restartGame() private {
         reward = 0;
         numPlayer = 0;
         numInput = 0;
-        numReval = 0;
+        numReveal = 0;
     }
 
     function _checkIfRegis() private view returns (uint) {
@@ -55,13 +55,13 @@ contract RWAPSSF is CommitReveal {
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
             _restartGame();
-        } else if (numPlayer == 2) {
+        } else if (numPlayer == 2 && numReveal == 0) {
             require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
             require(player[(idx+1)%2].choice == bytes32(0) && player[idx].choice != bytes32(0));
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
             _restartGame();
-        } else if (numInput == 2) {
+        } else if (numReveal == 1) {
             require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
             require(commits[msg.sender].revealed == true);
             address payable account = payable(player[idx].addr);
@@ -87,8 +87,8 @@ contract RWAPSSF is CommitReveal {
         uint idx = _checkIfRegis();
         revealAnswer(bytes32(answer), bytes32(salt));
         ans[idx].choice = answer;
-        numReval++;
-        if (numReval == 2) {
+        numReveal++;
+        if (numReveal == 2) {
             _checkWinnerAndPay();
         }
     }
@@ -99,12 +99,12 @@ contract RWAPSSF is CommitReveal {
         address payable account0 = payable(player[0].addr);
         address payable account1 = payable(player[1].addr);
         if ((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice || (p0Choice + 3) % 7 == p1Choice) {
-            // to pay player[1]
-            account1.transfer(reward);
+            // to pay player[0]
+            account0.transfer(reward);
         }
         else if ((p1Choice + 1) % 7 == p0Choice || (p1Choice + 2) % 7 == p0Choice || (p1Choice + 3) % 7 == p0Choice) {
-            // to pay player[0]
-            account0.transfer(reward);    
+            // to pay player[1]
+            account1.transfer(reward);    
         }
         else {
             // to split reward
