@@ -43,4 +43,10 @@
 ผู้เล่นทั้ง 2 เลือก choice 0 ทั้งคู่
 ![ผู้เล่นทั้ง 2 เลือก choice 0 ทั้งคู่](./Screenshot/Screenshot2024-02-13144519.png)
 ### กรณีเเพ้-ชนะ
+ผู้เล่นที่ 0 เลือก choice 2
+![ผู้เล่นทั้ง 0 เลือก choice 2](./Screenshot/Screenshot2024-02-13152214.png)
+ผู้เล่นที่ 1 เลือก choice 6
+![ผู้เล่นที่ 1 เลือก choice 6](./Screenshot/Screenshot2024-02-13152326.png)
+ผลเเพ้-ชนะ -> ผู้เล่นที่ 1 ชนะเนื่องจาก Water=6 ชนะ Scissors=2
+![ผลเเพ้-ชนะ](./Screenshot/Screenshot2024-02-13152454.png)
     
