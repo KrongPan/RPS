@@ -1,23 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity >=0.7.0 <0.9.0;
+import "./CommitReveal.sol";
 
-contract RWAPSSF {
+contract RWAPSSF is CommitReveal {
     struct Player {
-        uint choice;
+        bytes32 choice;
         address addr;
         uint depositTime;
+    }
+
+    struct Ans {
+        uint choice;
     }
     uint public numPlayer = 0;
     uint public reward = 0;
     mapping (uint => Player) public player;
+    mapping (uint => Ans) public ans;
     uint public numInput = 0;
     uint public withdrawTime = 15 seconds;
+    uint public numReval = 0;
 
     function _restartGame() private {
         reward = 0;
         numPlayer = 0;
         numInput = 0;
+        numReval = 0;
     }
 
     function _checkIfRegis() private view returns (uint) {
@@ -35,7 +43,7 @@ contract RWAPSSF {
         require(msg.value == 1 ether);
         reward += msg.value;
         player[numPlayer].addr = msg.sender;
-        player[numPlayer].choice = 7;
+        player[numPlayer].choice = bytes32(0);
         player[numPlayer].depositTime = block.timestamp;
         numPlayer++;
     }
@@ -46,35 +54,48 @@ contract RWAPSSF {
         if(numPlayer == 1) {
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
-            reward = 0;
-            numPlayer--;
             _restartGame();
         } else if (numPlayer == 2) {
             require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
-            require(player[(idx+1)%2].choice == 7 && player[idx].choice != 7);
+            require(player[(idx+1)%2].choice == bytes32(0) && player[idx].choice != bytes32(0));
             address payable account = payable(player[idx].addr);
             account.transfer(reward);
-            reward = 0;
-            numPlayer = 0;
+            _restartGame();
+        } else if (numInput == 2) {
+            require((block.timestamp >= player[0].depositTime + withdrawTime) && (block.timestamp >= player[1].depositTime + withdrawTime));
+            require(commits[msg.sender].revealed == true);
+            address payable account = payable(player[idx].addr);
+            account.transfer(reward);
             _restartGame();
         }
     }
 
-    function input(uint choice) public  {
+    function input(uint choice, uint salt) public  {
         require(numPlayer == 2);
         uint idx;
         idx = _checkIfRegis();
         require(choice >= 0 && choice < 7);
-        player[idx].choice = choice;
+        require(player[idx].choice == bytes32(0));
+        player[idx].choice = getSaltedHash(bytes32(choice), bytes32(salt));
         numInput++;
-        if (numInput == 2) {
+        commit(player[idx].choice);
+        player[idx].depositTime = block.timestamp;
+    }
+
+    function checkAns(uint answer, uint salt) public {
+        require(numInput == 2);
+        uint idx = _checkIfRegis();
+        revealAnswer(bytes32(answer), bytes32(salt));
+        ans[idx].choice = answer;
+        numReval++;
+        if (numReval == 2) {
             _checkWinnerAndPay();
         }
     }
 
     function _checkWinnerAndPay() private {
-        uint p0Choice = player[0].choice;
-        uint p1Choice = player[1].choice;
+        uint p0Choice = ans[0].choice;
+        uint p1Choice = ans[1].choice;
         address payable account0 = payable(player[0].addr);
         address payable account1 = payable(player[1].addr);
         if ((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice || (p0Choice + 3) % 7 == p1Choice) {
